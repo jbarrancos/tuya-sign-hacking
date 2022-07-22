@@ -7,9 +7,10 @@ function dumpJavaBytes(v) {
     return result;
 }
 
+setTimeout(function() {
 setImmediate(function() {
     console.log("[*] Starting TUYA script");
-    Java.perform(function() {
+    Java.performNow(function() {
         /*
         // this does not work consistently under frida, use overrides below
         orClass = Java.use("com.tuya.smart.common.or");
@@ -24,10 +25,11 @@ setImmediate(function() {
         */
 
         // log sign requests
-        jniClass = Java.use("com.tuya.smart.security.jni.JNICLibrary");
+        var jniClass = Java.use("com.tuya.smart.security.jni.JNICLibrary");
+        console.log("JniClass: " + jniClass);
         jniClass.doCommandNative.implementation = function(ctx, cmd, v2, v3, v4, v5) {
             //console.log("doCommandNative(%d)", cmd);
-            ret = this.doCommandNative(ctx, cmd, v2, v3, v4, v5);
+            var ret = this.doCommandNative(ctx, cmd, v2, v3, v4, v5);
             if (cmd == 1) {
                 console.log("SIGN: ", dumpJavaBytes(v2));
                 console.log("RET: ", ret);
@@ -38,11 +40,11 @@ setImmediate(function() {
 
 
         // log GET and POST data
-        apiParamsClass = Java.use("com.tuya.smart.android.network.TuyaApiParams");
+        var apiParamsClass = Java.use("com.tuya.smart.android.network.TuyaApiParams");
         apiParamsClass.getRequestUrl.overload().implementation = function() {
-            res = this.getRequestUrl();
+            var res = this.getRequestUrl();
             console.log("URL: ", res);
-            postData = this.getPostDataString();
+            var postData = this.getPostDataString();
             console.log("POST: ", postData);
             return res;
         };
@@ -51,17 +53,17 @@ setImmediate(function() {
 
 
         // log JSON responses
-        logClass = Java.use("com.tuya.smart.android.common.utils.L");
+        var logClass = Java.use("com.tuya.smart.android.common.utils.L");
         logClass.logJson.implementation = function(tag, json) {
             console.log("JSON: ", json);
         };
 
 
         // log MD5 requests
-        md5Class = Java.use("com.tuya.smart.android.common.utils.MD5Util");
+        var md5Class = Java.use("com.tuya.smart.android.common.utils.MD5Util");
         md5Class.md5AsBase64.overload('java.lang.String').implementation = function(input) {
             console.log("MD5 in: ", input);
-            res = this.md5AsBase64(input);
+            var res = this.md5AsBase64(input);
             console.log("MD5 out: ", res);
             return res;
         }
@@ -70,6 +72,5 @@ setImmediate(function() {
         // com.tuyasmart.sample.app.TuyaSmartApplication
 
     });
-
 });
-
+}, 5000);
