@@ -1,40 +1,27 @@
 function dumpJavaBytes(v) {
-    var buffer = Java.array('byte', v);
-    var result = "";
-    for(var i = 0; i < buffer.length; ++i){
-        result+= (String.fromCharCode(buffer[i]));
-    }
-    return result;
+  var buffer = Java.array('byte', v);
+  var result = "";
+  if (buffer === null) {
+    return "(null)";
+  }
+  
+  for(var i = 0; i < buffer.length; ++i){
+    result+= (String.fromCharCode(buffer[i]));
+  }
+  return result;
 }
+
 
 setTimeout(function() {
 setImmediate(function() {
     console.log("[*] Starting TUYA script");
     Java.performNow(function() {
-        /*
-        // this does not work consistently under frida, use overrides below
-        orClass = Java.use("com.tuya.smart.common.or");
-        orClass.a.overload('java.lang.String').implementation = function(v) {
-            console.log("[*] SIGN called");
-            sign = this.a(v);
-            console.log("[*]  => str to sign: ", v);
-            console.log("[*]  => signature : ", sign);
-            return "asdf"; //sign;
-        };
-        console.log("[*] SIGN handler modified");
-        */
 
         // log sign requests
         var jniClass = Java.use("com.tuya.smart.security.jni.JNICLibrary");
-        console.log("JniClass: " + jniClass);
         jniClass.doCommandNative.implementation = function(ctx, cmd, v2, v3, v4, v5) {
-            //console.log("doCommandNative(%d)", cmd);
             var ret = this.doCommandNative(ctx, cmd, v2, v3, v4, v5);
-            if (cmd == 1) {
-                console.log("SIGN: ", dumpJavaBytes(v2));
-                console.log("RET: ", ret);
-            }
-
+            send("doCommandNative: cmd=" + cmd + ", v2=" + dumpJavaBytes(v2) + ", v3=" + dumpJavaBytes(v3) + ", v4=" + v4 + ", v5=" + v5 + ", ret=" + ret);
             return ret;
         };
 
